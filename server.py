@@ -76,12 +76,16 @@ class Server(object):
         the room in warm light reflected from the half-drawn curtains."
 
         :param room_number: int
-        :return: str
+        :return rooms[room_number]: str
         """
 
-        # TODO: YOUR CODE HERE
+        rooms = {0: "Blue sky room.",
+                 1: "Hall of mirrors.",
+                 2: "The grotto!",
+                 3: "Red carpet wing."
+                 }
 
-        pass
+        return rooms[room_number]
 
     def greet(self):
         """
@@ -108,9 +112,12 @@ class Server(object):
         :return: None 
         """
 
-        # TODO: YOUR CODE HERE
+        received = b''
 
-        pass
+        while b'\n' not in received:
+            received += self.client_connection.recv(16)
+
+        self.input_buffer = received.decode().strip()
 
     def move(self, argument):
         """
@@ -132,10 +139,25 @@ class Server(object):
         :param argument: str
         :return: None
         """
+        self.output_buffer = ""
 
-        # TODO: YOUR CODE HERE
+        if self.room == 0 and argument == "north":
+            self.room = 3
+        elif self.room == 0 and argument == "west":
+            self.room = 1
+        elif self.room == 0 and argument == "east":
+            self.room = 2
+        elif self.room == 1 and argument == "east":
+            self.room = 0
+        elif self.room == 2 and argument == "west":
+            self.room = 0
+        elif self.room == 3 and argument == "south":
+            self.room = 0
+        else:
+            self.output_buffer = "Invalid room option. Try again."
+            return None
 
-        pass
+        self.output_buffer = self.room_description(self.room)
 
     def say(self, argument):
         """
@@ -151,9 +173,7 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        self.output_buffer = 'You said, "{}"'.format(argument.strip('\"').strip("\'"))
 
     def quit(self, argument):
         """
@@ -167,9 +187,8 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        self.done = True
+        self.output_buffer = "Goodbye!"
 
     def route(self):
         """
@@ -183,9 +202,16 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
+        received = self.input_buffer.split(" ")
+        command = received.pop(0)
+        argument = " ".join(received)
 
-        pass
+        # call the appropriate method with the appropriate argument
+        {
+            "move": self.move,
+            "say": self.say,
+            "quit": self.quit,
+        }[command](argument)
 
     def push_output(self):
         """
@@ -197,9 +223,11 @@ class Server(object):
         :return: None 
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        # If a user chooses to move to invalid room option, removed the 'ok!' prepend
+        if self.output_buffer.split(" ")[0] == "Invalid":
+            self.client_connection.sendall(self.output_buffer.encode() + b'\n')
+        else:
+            self.client_connection.sendall(b"OK! " + self.output_buffer.encode() + b'\n')
 
     def serve(self):
         self.connect()

@@ -22,6 +22,9 @@ while True:
         print("Connection closed by host.")
         break
 
+    if "Goodbye" in response:
+        break
+
     print(response)
 
     my_message = input("> ").encode('utf-8') + b'\n'
